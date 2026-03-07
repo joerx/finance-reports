@@ -1,4 +1,4 @@
-name: Build and publish Docker image
+name: Build and publish artifacts
 
 on:
   push:
@@ -9,10 +9,9 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository_owner }}/expense-dashboard
 
 jobs:
-  build-and-push:
+  build-and-push-image:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -36,12 +35,12 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/expense-dashboard
           tags: |
-            type=ref,event=branch
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,prefix=,format=short,enable={{is_default_branch}}
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
-            type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push
         uses: docker/build-push-action@v6
@@ -52,3 +51,40 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  publish-chart:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        run: |
+          helm registry login ${{ env.REGISTRY }} \
+            --username ${{ github.actor }} \
+            --password ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Derive chart version
+        id: chart_version
+        run: |
+          if [[ "${{ github.ref_type }}" == "tag" ]]; then
+            echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+          else
+            BASE=$(grep '^version:' helm/expense-dashboard/Chart.yaml | awk '{print $2}')
+            SHA=$(echo "$GITHUB_SHA" | cut -c1-8)
+            echo "version=${BASE}-${SHA}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Package chart
+        run: |
+          helm package helm/expense-dashboard \
+            --version ${{ steps.chart_version.outputs.version }}
+
+      - name: Push chart
+        run: |
+          helm push expense-dashboard-${{ steps.chart_version.outputs.version }}.tgz \
+            oci://${{ env.REGISTRY }}/${{ github.repository_owner }}/helm
