@@ -3,14 +3,14 @@ import duckdb
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
+import dotenv
 
-plt.style.use("dark_background")
+dotenv.load_dotenv()
 
-BUCKET   = "dev-finance-reports-cfvd"
-ENDPOINT = "eu-central-1.linodeobjects.com"
-REGION   = "eu-central-1"
-
-st.set_page_config(page_title="Expense Dashboard", layout="wide")
+BUCKET = os.environ["S3_BUCKET"]
+ENDPOINT = os.environ["S3_ENDPOINT"]
+REGION = os.environ.get("S3_REGION", "eu-central-1")
+QUARTER_MONTHS = {1: (1, 3), 2: (4, 6), 3: (7, 9), 4: (10, 12)}
 
 
 def _make_connection():
@@ -32,12 +32,23 @@ def _make_connection():
 
 @st.cache_data(show_spinner="Loading expenses from S3 ...")
 def load_data(quarter: str) -> pd.DataFrame:
-    url = f"s3://{BUCKET}/expenses/expenses_{quarter}.parquet"
+    year_str, q_str = quarter.split("-")
+    year = int(year_str)
+    q = int(q_str[1])
+    month_start, month_end = QUARTER_MONTHS[q]
+
+    glob = f"s3://{BUCKET}/expenses/year={year}/**/*.parquet"
     con = _make_connection()
-    return con.sql(f"SELECT * FROM '{url}'").df()
+    return con.sql(f"""
+        SELECT * FROM read_parquet('{glob}', hive_partitioning = true)
+        WHERE CAST(month AS INTEGER) BETWEEN {month_start} AND {month_end}
+    """).df()
 
 
 def main():
+    plt.style.use("dark_background")
+    st.set_page_config(page_title="Expense Dashboard", layout="wide")
+
     with st.sidebar:
         st.title("Expense Dashboard")
         quarter = st.text_input("Quarter (YYYY-QN)", value="2026-Q1")

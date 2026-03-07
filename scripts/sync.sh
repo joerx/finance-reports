@@ -2,8 +2,8 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ENV_FILE="$SCRIPT_DIR/.env"
-PYTHON="$SCRIPT_DIR/venv/bin/python"
+ENV_FILE="$(dirname 0)/.env"
+PYTHON="$(which python)"
 S3_ENDPOINT="https://eu-central-1.linodeobjects.com"
 S3_BUCKET="dev-finance-reports-cfvd"
 
@@ -21,7 +21,7 @@ if [[ ! "$QUARTER" =~ ^[0-9]{4}-Q[1-4]$ ]]; then
   exit 1
 fi
 
-S3_KEY="expenses/expenses_${QUARTER}.parquet"
+S3_PREFIX="expenses"
 
 if [[ ! -f "$ENV_FILE" ]]; then
   echo "Error: .env file not found at $ENV_FILE" >&2
@@ -31,16 +31,16 @@ fi
 # shellcheck disable=SC1090
 source "$ENV_FILE"
 
-TMPFILE="$(mktemp --suffix=.parquet)"
-trap 'rm -f "$TMPFILE"' EXIT
+OUTDIR="$(mktemp -d)"
+trap 'rm -rf "$OUTDIR"' EXIT
 
 echo "Extracting expenses from $DB_FILE for $QUARTER ..."
-"$PYTHON" "$SCRIPT_DIR/main.py" "$DB_FILE" "$TMPFILE" "$QUARTER"
+"$PYTHON" "$SCRIPT_DIR/batch_export.py" --db "$DB_FILE" --quarter "$QUARTER" --outdir "$OUTDIR"
 
-echo "Uploading to s3://$S3_BUCKET/$S3_KEY ..."
+echo "Syncing to s3://$S3_BUCKET/$S3_PREFIX ..."
 AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" \
 AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" \
-aws s3 cp "$TMPFILE" "s3://$S3_BUCKET/$S3_KEY" \
+aws s3 sync "$OUTDIR" "s3://$S3_BUCKET/$S3_PREFIX" \
   --endpoint-url "$S3_ENDPOINT"
 
 echo "Done."
