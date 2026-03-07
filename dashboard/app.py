@@ -15,8 +15,8 @@ QUARTER_MONTHS = {1: (1, 3), 2: (4, 6), 3: (7, 9), 4: (10, 12)}
 
 def _make_connection():
     con = duckdb.connect()
-    con.install_extension("httpfs")
-    con.load_extension("httpfs")
+    con.execute("INSTALL httpfs")
+    con.execute("LOAD httpfs")
     con.execute(f"""
         CREATE OR REPLACE SECRET linode_s3 (
             TYPE       s3,
