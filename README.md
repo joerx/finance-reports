@@ -42,7 +42,7 @@ docker pull ghcr.io/<your-github-username>/expense-dashboard:latest
 Or build it locally if you are working off an unpublished branch:
 
 ```bash
-docker build -t expense-dashboard:latest dashboard/
+docker build -t finance-reporting-dashboard:latest dashboard/
 ```
 
 ### 2. Import the image into k3d
@@ -51,10 +51,10 @@ k3d clusters cannot pull images directly — they must be imported into the clus
 
 ```bash
 # From GHCR
-k3d image import ghcr.io/<your-github-username>/expense-dashboard:latest
+k3d image import ghcr.io/<your-github-username>/finance-reporting-dashboard:latest
 
 # Or from a local build
-k3d image import expense-dashboard:latest
+k3d image import finance-reporting-dashboard:latest
 ```
 
 > Re-run this step every time you update the image.
@@ -63,24 +63,14 @@ When using the GHCR image, set the repository in the Helm values:
 
 ```bash
 helm install expense-dashboard helm/expense-dashboard \
-  --set image.repository=ghcr.io/<your-github-username>/expense-dashboard \
+  --set image.repository=ghcr.io/<your-github-username>/finance-reporting-dashboard \
   --set image.pullPolicy=IfNotPresent
 ```
 
-### 3. Create the Kubernetes Secret
-
-The app reads S3 credentials from environment variables injected by an existing Secret. Create it from your `.env` file:
+### 3. Install with Helm
 
 ```bash
-kubectl create secret generic expense-dashboard-s3 \
-  --from-env-file=.env \
-  --dry-run=client -o yaml | kubectl apply -f -
-```
-
-### 4. Install with Helm
-
-```bash
-helm install expense-dashboard helm/expense-dashboard
+helm upgrade --install --namespace finance-reporting --create-namespace finance-reporting-dashboard charts/dashboard
 ```
 
 The chart uses `expense-dashboard-s3` as the default secret name. If you used a different name, override it:
@@ -88,6 +78,17 @@ The chart uses `expense-dashboard-s3` as the default secret name. If you used a 
 ```bash
 helm install expense-dashboard helm/expense-dashboard \
   --set secretName=my-secret
+```
+
+### 4. Create the Kubernetes Secret
+
+The app reads S3 credentials from environment variables injected by an existing Secret. Create it from your `.env` file:
+
+```bash
+kubectl create secret generic finance-reporting-s3 \
+  -n finance-reporting \
+  --from-env-file=.env \
+  --dry-run=client -o yaml | kubectl apply -f -
 ```
 
 ### 5. Get the external address
