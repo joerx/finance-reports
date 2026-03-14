@@ -1,7 +1,7 @@
 {{/*
 Expand the name of the chart.
 */}}
-{{- define "expense-reports.name" -}}
+{{- define "finance-reports-dashboard.name" -}}
 {{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
@@ -10,7 +10,7 @@ Create a default fully qualified app name.
 We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
 If release name contains chart name it will be used as a full name.
 */}}
-{{- define "expense-reports.fullname" -}}
+{{- define "finance-reports-dashboard.fullname" -}}
 {{- if .Values.fullnameOverride }}
 {{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" }}
 {{- else }}
@@ -26,16 +26,16 @@ If release name contains chart name it will be used as a full name.
 {{/*
 Create chart name and version as used by the chart label.
 */}}
-{{- define "expense-reports.chart" -}}
+{{- define "finance-reports-dashboard.chart" -}}
 {{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{/*
 Common labels
 */}}
-{{- define "expense-reports.labels" -}}
-helm.sh/chart: {{ include "expense-reports.chart" . }}
-{{ include "expense-reports.selectorLabels" . }}
+{{- define "finance-reports-dashboard.labels" -}}
+helm.sh/chart: {{ include "finance-reports-dashboard.chart" . }}
+{{ include "finance-reports-dashboard.selectorLabels" . }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
@@ -45,17 +45,17 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{/*
 Selector labels
 */}}
-{{- define "expense-reports.selectorLabels" -}}
-app.kubernetes.io/name: {{ include "expense-reports.name" . }}
+{{- define "finance-reports-dashboard.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "finance-reports-dashboard.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/*
 Create the name of the service account to use
 */}}
-{{- define "expense-reports.serviceAccountName" -}}
+{{- define "finance-reports-dashboard.serviceAccountName" -}}
 {{- if .Values.serviceAccount.create }}
-{{- default (include "expense-reports.fullname" .) .Values.serviceAccount.name }}
+{{- default (include "finance-reports-dashboard.fullname" .) .Values.serviceAccount.name }}
 {{- else }}
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
