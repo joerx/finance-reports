@@ -9,7 +9,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  BASENAME: finance-reporting
+  BASENAME: finance-reports
 
 jobs:
   build-and-push-image:
