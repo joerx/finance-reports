@@ -1,18 +1,18 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "expense-reports.fullname" . }}
+  name: {{ include "finance-reports-dashboard.fullname" . }}
   labels:
-    {{- include "expense-reports.labels" . | nindent 4 }}
+    {{- include "finance-reports-dashboard.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      {{- include "expense-reports.selectorLabels" . | nindent 6 }}
+      {{- include "finance-reports-dashboard.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
-        {{- include "expense-reports.selectorLabels" . | nindent 8 }}
+        {{- include "finance-reports-dashboard.selectorLabels" . | nindent 8 }}
     spec:
       containers:
         - name: dashboard
