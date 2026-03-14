@@ -1,3 +1,4 @@
+import logging
 import os
 import duckdb
 import streamlit as st
@@ -6,6 +7,20 @@ import matplotlib.pyplot as plt
 import dotenv
 
 dotenv.load_dotenv()
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+log = logging.getLogger(__name__)
+
+
+def get_auth_user():
+    """Extract authenticated user info from proxy-injected request headers."""
+    headers = st.context.headers
+    log.info("Request headers: %s", dict(headers))
+    return {
+        "user":   headers.get("X-Auth-Request-User"),
+        "email":  headers.get("X-Auth-Request-Email"),
+        "groups": headers.get("X-Auth-Request-Groups"),
+    }
 
 BUCKET = os.environ["S3_BUCKET"]
 ENDPOINT = os.environ["S3_ENDPOINT"]
@@ -49,8 +64,18 @@ def main():
     plt.style.use("dark_background")
     st.set_page_config(page_title="Expense Dashboard", layout="wide")
 
+    auth = get_auth_user()
+
     with st.sidebar:
         st.title("Expense Dashboard")
+        if auth["user"] or auth["email"]:
+            name = auth["user"] or auth["email"]
+            st.caption(f"Signed in as **{name}**")
+            if auth["email"] and auth["email"] != auth["user"]:
+                st.caption(auth["email"])
+        else:
+            st.caption("Welcome, guest")
+        st.divider()
         quarter = st.text_input("Quarter (YYYY-QN)", value="2026-Q1")
 
     try:
