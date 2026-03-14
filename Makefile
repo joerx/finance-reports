@@ -1,7 +1,12 @@
 VERSION ?= v0.1.0-$(shell git rev-parse --short HEAD)
+IMAGE   ?= ghcr.io/joerx/finance-reports-dashboard:$(VERSION)
 
 # Treat any version with a pre-release suffix (hyphen) as a pre-release
 PRERELEASE := $(if $(findstring -,$(VERSION)),--prerelease,"")
+
+.PHONY: build
+build:
+	docker build -t $(IMAGE) dashboard/
 
 .PHONY: release
 release: _require-token
