@@ -24,12 +24,12 @@ fi
 S3_PREFIX="expenses"
 
 if [[ ! -f "$ENV_FILE" ]]; then
-  echo "Error: .env file not found at $ENV_FILE" >&2
-  exit 1
+  echo "Warn: .env file not found at $ENV_FILE" >&2
+  # exit 1
+else
+  # shellcheck disable=SC1090
+  source "$ENV_FILE"
 fi
-
-# shellcheck disable=SC1090
-source "$ENV_FILE"
 
 OUTDIR="$(mktemp -d)"
 trap 'rm -rf "$OUTDIR"' EXIT
@@ -38,8 +38,8 @@ echo "Extracting expenses from $DB_FILE for $QUARTER ..."
 "$PYTHON" "$SCRIPT_DIR/batch_export.py" --db "$DB_FILE" --quarter "$QUARTER" --outdir "$OUTDIR"
 
 echo "Syncing to s3://$S3_BUCKET/$S3_PREFIX ..."
-AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" \
-AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" \
+# AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" \
+# AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" \
 aws s3 sync "$OUTDIR" "s3://$S3_BUCKET/$S3_PREFIX" \
   --endpoint-url "$S3_ENDPOINT"
 
