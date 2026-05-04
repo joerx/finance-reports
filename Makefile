@@ -6,7 +6,7 @@ PRERELEASE := $(if $(findstring -,$(VERSION)),--prerelease,"")
 
 .PHONY: build
 build:
-	docker build -t $(IMAGE) dashboard/
+	docker build -t $(IMAGE) -f dashboard/Dockerfile .
 
 .PHONY: release
 release: _require-token

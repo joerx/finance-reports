@@ -2,10 +2,12 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-COPY requirements.txt .
+COPY ./requirements.txt .
+COPY ./.streamlit .
+
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY app.py .
+COPY dashboard/app.py .
 
 EXPOSE 8501
 
