@@ -48,6 +48,6 @@ echo "Extracting expenses from $DB_FILE for $QUARTER ..."
 
 echo "Syncing to s3://$S3_BUCKET/$S3_PREFIX ..."
 aws s3 sync "$OUTDIR" "s3://$S3_BUCKET/$S3_PREFIX" \
-  --endpoint-url "$S3_ENDPOINT"
+  --endpoint-url "https://$S3_ENDPOINT"
 
 echo "Done."
