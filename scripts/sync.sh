@@ -2,10 +2,11 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ENV_FILE="$(dirname 0)/.env"
+ENV_FILE="$(dirname "$SCRIPT_DIR")/.env"
 PYTHON="$(which python)"
-S3_ENDPOINT="https://eu-central-1.linodeobjects.com"
-S3_BUCKET="dev-finance-reports-cfvd"
+
+S3_ENDPOINT=""
+S3_BUCKET=""
 
 if [[ $# -ne 2 ]]; then
   echo "Usage: $(basename "$0") <db-file> <quarter>" >&2
@@ -25,10 +26,18 @@ S3_PREFIX="expenses"
 
 if [[ ! -f "$ENV_FILE" ]]; then
   echo "Warn: .env file not found at $ENV_FILE" >&2
-  # exit 1
 else
   # shellcheck disable=SC1090
   source "$ENV_FILE"
+fi
+
+if [[ -z "${S3_ENDPOINT:-}" ]]; then
+  echo "Error: S3_ENDPOINT is not set" >&2
+  exit 1
+fi
+if [[ -z "${S3_BUCKET:-}" ]]; then
+  echo "Error: S3_BUCKET is not set" >&2
+  exit 1
 fi
 
 OUTDIR="$(mktemp -d)"
@@ -38,8 +47,6 @@ echo "Extracting expenses from $DB_FILE for $QUARTER ..."
 "$PYTHON" "$SCRIPT_DIR/batch_export.py" --db "$DB_FILE" --quarter "$QUARTER" --outdir "$OUTDIR"
 
 echo "Syncing to s3://$S3_BUCKET/$S3_PREFIX ..."
-# AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" \
-# AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" \
 aws s3 sync "$OUTDIR" "s3://$S3_BUCKET/$S3_PREFIX" \
   --endpoint-url "$S3_ENDPOINT"
 
