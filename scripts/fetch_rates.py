@@ -52,7 +52,7 @@ def forward_fill(rates_by_date: dict, start: date, end: date) -> dict:
     return filled
 
 
-def main():
+def parse_args():
     parser = argparse.ArgumentParser(description="Fetch historical FX rates from Frankfurter")
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--quarter", metavar="YYYY-QN",    help="Quarter to fetch rates for (e.g. 2026-Q1)")
@@ -60,7 +60,11 @@ def main():
     parser.add_argument("--base",    default="GBP",        help="Base currency (default: GBP)")
     parser.add_argument("--symbols", default="EUR,SGD",    help="Comma-separated target currencies (default: EUR,SGD)")
     parser.add_argument("--output",  default="rates.json", metavar="FILE", help="Output JSON file (default: rates.json)")
-    args = parser.parse_args()
+    return parser.parse_args()
+
+
+def main():
+    args = parse_args()
 
     start_str, end_str = parse_date_range(args)
     start = date.fromisoformat(start_str)
@@ -83,4 +87,5 @@ def main():
     print(f"Wrote {len(filled)} days of rates to {args.output}", file=sys.stderr)
 
 
-main()
+if __name__ == "__main__":
+    main()
