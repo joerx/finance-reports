@@ -20,7 +20,7 @@ except Exception as e:
 
 df = df[df["account_type"] == "income"]
 # Income splits are stored as negative values (credit-normal); negate to show as positive
-df["amount"] = -df["amount"]
+df["gbp_value"] = -df["gbp_value"]
 
 months = last_12_months()
 month_labels = [date(y, m, 1).strftime("%Y-%m") for y, m in months]
@@ -31,7 +31,7 @@ df["account"] = df["account"].str.removeprefix("Income/")
 
 # Top 10 sources by total income across the period
 top10 = (
-    df.groupby("account")["amount"]
+    df.groupby("account")["gbp_value"]
     .sum()
     .sort_values(ascending=False)
     .head(10)
@@ -41,7 +41,7 @@ top10 = (
 df["category"] = df["account"].where(df["account"].isin(top10), "Other")
 
 pivot = (
-    df.groupby(["year", "month", "category"])["amount"]
+    df.groupby(["year", "month", "category"])["gbp_value"]
     .sum()
     .unstack(fill_value=0)
 )
@@ -103,11 +103,11 @@ col_cats, col_tx = st.columns([0.4, 0.6])
 with col_cats:
     st.subheader(f"Sources — {month_label}")
     by_cat = (
-        sel_df.groupby("account")["amount"]
+        sel_df.groupby("account")["gbp_value"]
         .sum()
         .sort_values(ascending=False)
         .reset_index()
-        .rename(columns={"account": "Source", "amount": "Total (£)"})
+        .rename(columns={"account": "Source", "gbp_value": "Total (£)"})
     )
     total_row = pd.DataFrame([{"Source": "Total", "Total (£)": by_cat["Total (£)"].sum()}])
     by_cat = pd.concat([by_cat, total_row], ignore_index=True)
@@ -136,10 +136,10 @@ with col_tx:
         st.subheader(f"Transactions — {active_cat}")
         tx = (
             sel_df[sel_df["account"] == active_cat]
-            [["date", "description", "amount"]]
-            .sort_values("amount", ascending=False)
+            [["date", "description", "gbp_value"]]
+            .sort_values("gbp_value", ascending=False)
             .reset_index(drop=True)
-            .rename(columns={"date": "Date", "description": "Description", "amount": "Amount (£)"})
+            .rename(columns={"date": "Date", "description": "Description", "gbp_value": "Amount (£)"})
         )
         st.dataframe(
             tx,

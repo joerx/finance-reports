@@ -43,8 +43,13 @@ fi
 OUTDIR="$(mktemp -d)"
 trap 'rm -rf "$OUTDIR"' EXIT
 
-echo "Extracting expenses from $DB_FILE for $QUARTER ..."
-"$PYTHON" "$SCRIPT_DIR/batch_export.py" --db "$DB_FILE" --quarter "$QUARTER" --outdir "$OUTDIR"
+RATES_FILE="$OUTDIR/rates.json"
+
+echo "Fetching FX rates for $QUARTER ..."
+"$PYTHON" "$SCRIPT_DIR/fetch_rates.py" --quarter "$QUARTER" --output "$RATES_FILE"
+
+echo "Extracting transactions from $DB_FILE for $QUARTER ..."
+"$PYTHON" "$SCRIPT_DIR/batch_export.py" --db "$DB_FILE" --quarter "$QUARTER" --outdir "$OUTDIR" --rates "$RATES_FILE"
 
 echo "Syncing to s3://$S3_BUCKET/$S3_PREFIX ..."
 aws s3 sync "$OUTDIR" "s3://$S3_BUCKET/$S3_PREFIX" \

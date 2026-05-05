@@ -51,6 +51,32 @@ s3://dev-finance-reports-cfvd/expenses/expenses_<quarter>.parquet
 
 The dashboard quarter selector must match a file that has been uploaded.
 
+## Querying data directly with DuckDB
+
+The `.duckdbrc` in the project root pre-loads the S3 secret and creates a `transactions` view over the full parquet dataset. Use the wrapper script so that credentials from `.env` are picked up automatically:
+
+```bash
+./scripts/duckdb.sh                   # interactive shell
+./scripts/duckdb.sh -c "SELECT ..."   # one-shot query
+```
+
+Once in the shell, the `transactions` view is ready:
+
+```sql
+-- Spend by account type
+SELECT account_type, round(sum(gbp_value), 2) AS gbp
+FROM transactions
+GROUP BY 1 ORDER BY 2 DESC;
+
+-- Monthly expenses
+SELECT year, month, round(sum(gbp_value), 2) AS gbp
+FROM transactions
+WHERE account_type = 'expenses'
+GROUP BY 1, 2 ORDER BY 1, 2;
+```
+
+The view uses hive partitioning, so filtering on `year` and `month` is efficient — DuckDB prunes irrelevant files without scanning them.
+
 ## Dashboard
 
 ```

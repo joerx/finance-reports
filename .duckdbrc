@@ -1,0 +1,17 @@
+INSTALL httpfs;
+LOAD httpfs;
+
+CREATE OR REPLACE SECRET s3 (
+    TYPE      s3,
+    KEY_ID    getenv('AWS_ACCESS_KEY_ID'),
+    SECRET    getenv('AWS_SECRET_ACCESS_KEY'),
+    ENDPOINT  getenv('S3_ENDPOINT'),
+    REGION    ifnull(getenv('S3_REGION'), 'eu-central-1'),
+    URL_STYLE 'path'
+);
+
+CREATE OR REPLACE VIEW transactions AS
+    SELECT * FROM read_parquet(
+        's3://' || getenv('S3_BUCKET') || '/gnucash/**/*.parquet',
+        hive_partitioning = true
+    );

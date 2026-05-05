@@ -21,3 +21,6 @@ build/
 # Env
 .env
 out/
+
+# Generated data
+rates.json
