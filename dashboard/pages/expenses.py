@@ -30,7 +30,7 @@ df["account"] = df["account"].str.removeprefix("Expenses/")
 
 # Top 10 categories by total spend across the period
 top10 = (
-    df.groupby("account")["amount"]
+    df.groupby("account")["gbp_value"]
     .sum()
     .sort_values(ascending=False)
     .head(10)
@@ -40,7 +40,7 @@ top10 = (
 df["category"] = df["account"].where(df["account"].isin(top10), "Other")
 
 pivot = (
-    df.groupby(["year", "month", "category"])["amount"]
+    df.groupby(["year", "month", "category"])["gbp_value"]
     .sum()
     .unstack(fill_value=0)
 )
@@ -102,11 +102,11 @@ col_cats, col_tx = st.columns([0.4, 0.6])
 with col_cats:
     st.subheader(f"Categories — {month_label}")
     by_cat = (
-        sel_df.groupby("account")["amount"]
+        sel_df.groupby("account")["gbp_value"]
         .sum()
         .sort_values(ascending=False)
         .reset_index()
-        .rename(columns={"account": "Category", "amount": "Total (£)"})
+        .rename(columns={"account": "Category", "gbp_value": "Total (£)"})
     )
     total_row = pd.DataFrame([{"Category": "Total", "Total (£)": by_cat["Total (£)"].sum()}])
     by_cat = pd.concat([by_cat, total_row], ignore_index=True)
@@ -135,10 +135,10 @@ with col_tx:
         st.subheader(f"Transactions — {active_cat}")
         tx = (
             sel_df[sel_df["account"] == active_cat]
-            [["date", "description", "amount"]]
-            .sort_values("amount", ascending=False)
+            [["date", "description", "gbp_value"]]
+            .sort_values("gbp_value", ascending=False)
             .reset_index(drop=True)
-            .rename(columns={"date": "Date", "description": "Description", "amount": "Amount (£)"})
+            .rename(columns={"date": "Date", "description": "Description", "gbp_value": "Amount (£)"})
         )
         st.dataframe(
             tx,
