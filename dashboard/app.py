@@ -13,6 +13,10 @@ dotenv.load_dotenv()
 logging.basicConfig(level=logging.DEBUG, format="%(asctime)s %(levelname)s %(message)s")
 log = logging.getLogger(__name__)
 
+BUCKET = os.environ["S3_BUCKET"]
+ENDPOINT = os.environ["S3_ENDPOINT"]
+REGION = os.environ.get("S3_REGION", "eu-central-1")
+
 
 def get_auth_user():
     """Extract authenticated user info from proxy-injected request headers."""
@@ -23,11 +27,6 @@ def get_auth_user():
         "email":  headers.get("X-Auth-Request-Email"),
         "groups": headers.get("X-Auth-Request-Groups"),
     }
-
-
-BUCKET = os.environ["S3_BUCKET"]
-ENDPOINT = os.environ["S3_ENDPOINT"]
-REGION = os.environ.get("S3_REGION", "eu-central-1")
 
 
 def _make_connection():
@@ -67,7 +66,7 @@ def load_data() -> pd.DataFrame:
         f"(CAST(year AS INTEGER) = {y} AND CAST(month AS INTEGER) = {m})"
         for y, m in months
     )
-    glob = f"s3://{BUCKET}/expenses/**/*.parquet"
+    glob = f"s3://{BUCKET}/gnucash/**/*.parquet"
     con = _make_connection()
     return con.sql(f"""
         SELECT * FROM read_parquet('{glob}', hive_partitioning = true)
@@ -76,12 +75,7 @@ def load_data() -> pd.DataFrame:
 
 
 def main():
-    # See https://streamlit-emoji-shortcodes-streamlit-app-gwckff.streamlit.app/ for icons
-    st.set_page_config(
-        page_title="Finance Dashboard", 
-        layout="wide", 
-        page_icon=":bar_chart:"
-    )
+    st.set_page_config(page_title="Expense Dashboard", layout="wide", page_icon=":bar_chart:")
 
     auth = get_auth_user()
 
@@ -90,6 +84,8 @@ def main():
     except Exception as e:
         st.error(f"Could not load data: {e}")
         return
+
+    df = df[df["account_type"] == "expenses"]
 
     months = _last_12_months()
     month_labels = [date(y, m, 1).strftime("%Y-%m") for y, m in months]
@@ -154,8 +150,6 @@ def main():
 
     st.subheader("Monthly expenses — last 12 months")
     chart_event = st.altair_chart(bars, on_select="rerun", use_container_width=True)
-
-    # Bottom panel with split category/transactions split view
 
     today = date.today()
     chart_sel = chart_event.selection.get("bar_select", [])

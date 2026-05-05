@@ -22,7 +22,7 @@ if [[ ! "$QUARTER" =~ ^[0-9]{4}-Q[1-4]$ ]]; then
   exit 1
 fi
 
-S3_PREFIX="expenses"
+S3_PREFIX="gnucash"
 
 if [[ ! -f "$ENV_FILE" ]]; then
   echo "Warn: .env file not found at $ENV_FILE" >&2
