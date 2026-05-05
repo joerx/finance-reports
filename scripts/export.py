@@ -110,7 +110,7 @@ def main(args):
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="Export all GnuCash splits with account metadata to Parquet or CSV")
   parser.add_argument("--db", required=True, metavar="FILE", help="GnuCash SQLite database file (e.g. 2026.gnucash)")
-  parser.add_argument("--output", required=True, metavar="FILE", help="Output Parquet file path (e.g. out.parquet)")
+  parser.add_argument("--output", required=True, metavar="FILE", help="Output Parquet file path (e.g. out.parquet or out.csv)")
   group = parser.add_mutually_exclusive_group(required=True)
   group.add_argument("--quarter", metavar="YYYY-QN", help="Quarter to export (e.g. 2026-Q1)")
   group.add_argument("--date", metavar="YYYY-MM-DD", help="Single day to export (e.g. 2026-03-07)")
