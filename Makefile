@@ -4,9 +4,13 @@ IMAGE   ?= ghcr.io/joerx/finance-reports-dashboard:$(VERSION)
 # Treat any version with a pre-release suffix (hyphen) as a pre-release
 PRERELEASE := $(if $(findstring -,$(VERSION)),--prerelease,"")
 
-.PHONY: build
-build:
+.PHONY: docker-build
+docker-build:
 	docker build -t $(IMAGE) -f dashboard/Dockerfile .
+
+.PHONY: docker-run
+docker-run: docker-build
+	docker run -p 8501:8501 --env-file .env ghcr.io/joerx/finance-reports-dashboard:latest
 
 .PHONY: release
 release: _require-token
