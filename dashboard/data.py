@@ -40,6 +40,19 @@ def last_12_months() -> list[tuple[int, int]]:
     return months
 
 
+@st.cache_data(show_spinner="Loading balances ...")
+def load_balances() -> pd.DataFrame:
+    """Sum gbp_value across all available history for assets and liabilities."""
+    glob = f"s3://{BUCKET}/gnucash/**/*.parquet"
+    con = _make_connection()
+    return con.sql(f"""
+        SELECT account_type, SUM(gbp_value) AS gbp_value
+        FROM read_parquet('{glob}', hive_partitioning = true)
+        WHERE account_type IN ('assets', 'liabilities')
+        GROUP BY account_type
+    """).df()
+
+
 @st.cache_data(show_spinner="Loading data ...")
 def load_data() -> pd.DataFrame:
     months = last_12_months()
