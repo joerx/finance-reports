@@ -171,110 +171,16 @@ cols[0].altair_chart(
     height=330
 )
 
-cols[1].subheader("Cashflow excl. ESOP")
-cols[1].caption("Same view with ESOP excluded from income, showing underlying cash flow position.")
+cols[1].subheader("Normalised Cashflow")
+cols[1].caption("Same view with ESOP, Investment PnL, and Unrealised PnL excluded from income, showing normalised cash flow.")
+
+NORMALISED_EXCLUDE = r"ESOP|Investment PnL|Unrealised PnL"
 
 cols[1].altair_chart(
-    income_expense_chart(monthly_income(inc_df[~inc_df["account"].str.contains("ESOP")]), monthly_exp),
+    income_expense_chart(monthly_income(inc_df[~inc_df["account"].str.contains(NORMALISED_EXCLUDE)]), monthly_exp),
     use_container_width=True,
     height=330
 )
 
 st.space(size="small")
 
-# ── Expense insights ──────────────────────────────────────────────────────────
-
-"""
-## Expense Insights
-"""
-
-def cat_summary(expense_df: pd.DataFrame, n_months: int) -> pd.DataFrame:
-    by_cat = (
-        expense_df.assign(account=expense_df["account"].str.removeprefix("Expenses/"))
-        .groupby("account")["gbp_value"]
-        .sum()
-        .sort_values(ascending=False)
-    )
-    grand_total = by_cat.sum()
-    top = by_cat.head(7).reset_index()
-    top.columns = ["Category", "_total"]
-    top["%"]           = (top["_total"] / grand_total * 100).round(1)
-    top["Avg/month (£)"] = (top["_total"] / n_months).round(2)
-    other_total = grand_total - top["_total"].sum()
-    top = top[["Category", "Avg/month (£)", "%"]]
-    if other_total > 0:
-        top = pd.concat([
-            top,
-            pd.DataFrame([{
-                "Category":      "Other",
-                "Avg/month (£)": round(other_total / n_months, 2),
-                "%":             round(other_total / grand_total * 100, 1),
-            }]),
-        ], ignore_index=True)
-    return top
-
-
-def make_pie(data: pd.DataFrame) -> alt.Chart:
-    return (
-        alt.Chart(data)
-        .mark_arc(innerRadius=40)
-        .encode(
-            theta=alt.Theta("Avg/month (£):Q"),
-            color=alt.Color("Category:N", legend=None),
-            tooltip=[
-                alt.Tooltip("Category:N",       title="Category"),
-                alt.Tooltip("Avg/month (£):Q",  title="Avg/month (£)", format=",.2f"),
-                alt.Tooltip("%:Q",               title="%",             format=".1f"),
-            ],
-        )
-        .properties(height=300, padding={"left": 5, "top": 25, "right": 5, "bottom": 5})
-        .configure(background="#1e293b")
-        .configure_view(stroke=None)
-    )
-
-
-pie_data_12m = cat_summary(exp_df, 12)
-
-n3_month = n2_month - 1 or 12
-n3_year  = n2_year if n2_month > 1 else n2_year - 1
-exp_3m   = exp_df[
-    ((df["year"] == n1_year)  & (df["month"] == n1_month)) |
-    ((df["year"] == n2_year)  & (df["month"] == n2_month)) |
-    ((df["year"] == n3_year)  & (df["month"] == n3_month))
-]
-pie_data_3m = cat_summary(exp_3m, 3)
-
-table_config = {
-    "Avg/month (£)": st.column_config.NumberColumn(format="£%,.2f"),
-    "%":             st.column_config.NumberColumn(format="%.1f%%"),
-}
-
-EXCLUDED_CATS = {"Rent", "Team Jolene"}
-
-def exclude(expense_df: pd.DataFrame) -> pd.DataFrame:
-    return expense_df[
-        ~expense_df["account"].str.removeprefix("Expenses/").str.split("/").str[0].isin(EXCLUDED_CATS)
-    ]
-
-pie_data_12m_excl = cat_summary(exclude(exp_df), 12)
-pie_data_3m_excl  = cat_summary(exclude(exp_3m),  3)
-
-ins = st.columns(2)
-ins[0].subheader("Top expenses (12m)")
-ins[1].subheader("Top expenses (3m)")
-
-ins = st.columns(4)
-ins[0].altair_chart(make_pie(pie_data_12m), use_container_width=True)
-ins[1].dataframe(pie_data_12m, hide_index=True, use_container_width=True, column_config=table_config)
-ins[2].altair_chart(make_pie(pie_data_3m),  use_container_width=True)
-ins[3].dataframe(pie_data_3m,  hide_index=True, use_container_width=True, column_config=table_config)
-
-ins = st.columns(2)
-ins[0].subheader("Discretionary expenses (12m)")
-ins[1].subheader("Discretionary expenses (3m)")
-
-ins = st.columns(4)
-ins[0].altair_chart(make_pie(pie_data_12m_excl), use_container_width=True)
-ins[1].dataframe(pie_data_12m_excl, hide_index=True, use_container_width=True, column_config=table_config)
-ins[2].altair_chart(make_pie(pie_data_3m_excl),  use_container_width=True)
-ins[3].dataframe(pie_data_3m_excl,  hide_index=True, use_container_width=True, column_config=table_config)
