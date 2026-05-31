@@ -1,6 +1,6 @@
 # Expense Dashboard
 
-A Streamlit dashboard that reads quarterly expense data from Parquet files stored in Linode Object Storage (S3-compatible) and visualises spend by category.
+A Streamlit dashboard that reads personal financial data from Parquet files stored in S3-compatible object storage and visualises it in various ways. Includes ETL scripts to load financial records from a [GnuCash](https://gnucash.org/) ledger.
 
 ## Prerequisites
 
@@ -15,6 +15,12 @@ streamlit run dashboard/app.py
 ```
 
 The app will be available at http://localhost:8501.
+
+## Limitations
+
+- Only GnuCash is supported as source, tho in principle anything that can produce the same Parquet format should work
+- It is assumed that for some reason you want to see all your financials in GBP
+- This is mostly vibe coded by Claude Code - Try to read the code at your own peril 🫣
 
 ## Setup
 
