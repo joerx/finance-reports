@@ -10,11 +10,12 @@ logging.basicConfig(level=logging.DEBUG, format="%(asctime)s %(levelname)s %(mes
 
 st.set_page_config(page_title="Finance Dashboard", layout="wide", page_icon=":bar_chart:")
 
-overview = st.Page("pages/overview.py",  title="Overview",  icon="💰️")
-expenses = st.Page("pages/expenses.py",  title="Expenses",  icon="💸")
-income   = st.Page("pages/income.py",    title="Income",    icon="💷")
+overview     = st.Page("pages/overview.py",     title="Overview",     icon="💰️")
+expenses     = st.Page("pages/expenses.py",     title="Expenses",     icon="💸")
+income       = st.Page("pages/income.py",       title="Income",       icon="💷")
+transactions = st.Page("pages/transactions.py", title="Transactions", icon="🧾")
 
-pg = st.navigation([overview, expenses, income], position="top")
+pg = st.navigation([overview, expenses, income, transactions], position="top")
 
 headers = st.context.headers
 user  = headers.get("X-Auth-Request-User")
