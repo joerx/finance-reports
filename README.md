@@ -8,6 +8,31 @@ A Streamlit dashboard that reads quarterly expense data from Parquet files store
 - [k3d](https://k3d.io/) with a running cluster
 - `kubectl` configured to point at the cluster
 - [Helm 3](https://helm.sh/docs/intro/install/)
+
+
+## Credentials
+
+- Generate Linode OSS credentials:
+
+```sh
+linode object-storage keys-create --label "${USER}@${HOSTNAME}-cli"
+```
+
+- Use the credentials generated above with `aws configure --profile linode`
+- To use Linode OSS with the `aws` CLI, use the `--endpoint-url` parameter:
+
+```sh
+aws --profile linode --endpoint-url https://eu-central-1.linodeobjects.com s3 ls
+```
+
+- To avoid having to use `--endpoint-url` each time, update `~/.aws/config`:
+
+```sh
+[profile linode]
+region = eu-central-1
+endpoint_url = https://eu-central-1.linodeobjects.com
+```
+
 - A `.env` file in the project root containing S3 credentials:
 
 
@@ -96,3 +121,4 @@ docker build -t finance-reports-dashboard:latest dashboard/
 ### k3d
 
 See [docs/k3d.md](./docs/k3d.md)
+  
