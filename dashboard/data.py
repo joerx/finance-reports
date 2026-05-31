@@ -41,14 +41,24 @@ def last_12_months() -> list[tuple[int, int]]:
 
 
 @st.cache_data(show_spinner="Loading balances ...")
-def load_balances() -> pd.DataFrame:
-    """Sum gbp_value across all available history for assets and liabilities."""
+def load_balances(exclude_pattern: str = "") -> pd.DataFrame:
+    """Sum gbp_value across all available history for assets and liabilities.
+
+    exclude_pattern: if set, any transaction where at least one split's account
+    matches this regex is dropped entirely (both legs) before summing.
+    """
     glob = f"s3://{BUCKET}/gnucash/**/*.parquet"
     con = _make_connection()
+    excl = (
+        f" AND tx_guid NOT IN ("
+        f"SELECT DISTINCT tx_guid FROM read_parquet('{glob}', hive_partitioning = true)"
+        f" WHERE regexp_matches(account, '{exclude_pattern}'))"
+        if exclude_pattern else ""
+    )
     return con.sql(f"""
         SELECT account_type, SUM(gbp_value) AS gbp_value
         FROM read_parquet('{glob}', hive_partitioning = true)
-        WHERE account_type IN ('assets', 'liabilities')
+        WHERE account_type IN ('assets', 'liabilities'){excl}
         GROUP BY account_type
     """).df()
 

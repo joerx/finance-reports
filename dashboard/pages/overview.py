@@ -43,6 +43,53 @@ def monthly_income(income_df: pd.DataFrame) -> pd.Series:
     )
 
 
+def _net_worth_series(tx_df: pd.DataFrame, current_net_worth: float) -> list[float]:
+    monthly_change = (
+        tx_df[tx_df["account_type"].isin(["assets", "liabilities"])]
+        .groupby(["year", "month"])["gbp_value"]
+        .sum()
+        .reindex(month_index, fill_value=0)
+    )
+    changes = monthly_change.values
+    nw = [0.0] * len(changes)
+    nw[-1] = current_net_worth
+    for i in range(len(nw) - 2, -1, -1):
+        nw[i] = nw[i + 1] - changes[i + 1]
+    return nw
+
+
+def net_worth_chart(series: dict[str, list[float]]) -> alt.Chart:
+    rows = [
+        {"month": month, "net_worth": val, "series": label}
+        for label, values in series.items()
+        for month, val in zip(month_labels, values)
+    ]
+    nw_df = pd.DataFrame(rows)
+    domain = list(series.keys())
+    colors = ["#60a5fa", "#c084fc"][: len(domain)]
+
+    return (
+        alt.Chart(nw_df)
+        .mark_line(strokeWidth=2, point=True)
+        .encode(
+            x=alt.X("month:O", sort=None, title=None),
+            y=alt.Y("net_worth:Q", title="Net Worth (£)"),
+            color=alt.Color(
+                "series:N",
+                scale=alt.Scale(domain=domain, range=colors),
+                legend=alt.Legend(title=None, orient="top-left"),
+            ),
+            tooltip=[
+                alt.Tooltip("month:O",     title="Month"),
+                alt.Tooltip("series:N",    title="Series"),
+                alt.Tooltip("net_worth:Q", title="Net Worth (£)", format=",.0f"),
+            ],
+        )
+        .configure(background="#1e293b")
+        .configure_view(stroke=None)
+    )
+
+
 def income_expense_chart(inc: pd.Series, exp: pd.Series) -> alt.LayerChart:
     summary = pd.DataFrame({
         "month":    month_labels,
@@ -160,21 +207,43 @@ st.space(size="small")
 
 # ── Charts ────────────────────────────────────────────────────────────────────
 
+UNREALISED_PNL     = r"Investment PnL|Unrealised PnL"
+NORMALISED_EXCLUDE = r"ESOP|Investment PnL|Unrealised PnL"
+
+excl_guids  = set(df[df["account"].str.contains(UNREALISED_PNL)]["tx_guid"])
+nw_tx_excl  = df[~df["tx_guid"].isin(excl_guids)]
+nw_bal_excl = load_balances(exclude_pattern=UNREALISED_PNL)
+nw_anchor_excl = (
+    float(nw_bal_excl[nw_bal_excl["account_type"] == "assets"]["gbp_value"].sum()) +
+    float(nw_bal_excl[nw_bal_excl["account_type"] == "liabilities"]["gbp_value"].sum())
+)
+
+st.subheader("Net Worth (12 months)")
+st.caption("Reconstructed from current net worth and monthly asset/liability changes. Current month is partial.")
+st.altair_chart(
+    net_worth_chart({
+        "Total":                  _net_worth_series(df,        net_worth),
+        "Excl. Unrealised PnL":   _net_worth_series(nw_tx_excl, nw_anchor_excl),
+    }),
+    use_container_width=True,
+    height=300,
+)
+
+st.space(size="small")
+
 cols = st.columns(2)
 
 cols[0].subheader("Cashflow (12 months)")
 cols[0].caption("Bars show net PnL (green = surplus, red = deficit). Lines show total income and expenses.")
 
 cols[0].altair_chart(
-    income_expense_chart(monthly_income(inc_df), monthly_exp), 
+    income_expense_chart(monthly_income(inc_df), monthly_exp),
     use_container_width=True,
     height=330
 )
 
 cols[1].subheader("Normalised Cashflow")
 cols[1].caption("Same view with ESOP, Investment PnL, and Unrealised PnL excluded from income, showing normalised cash flow.")
-
-NORMALISED_EXCLUDE = r"ESOP|Investment PnL|Unrealised PnL"
 
 cols[1].altair_chart(
     income_expense_chart(monthly_income(inc_df[~inc_df["account"].str.contains(NORMALISED_EXCLUDE)]), monthly_exp),
