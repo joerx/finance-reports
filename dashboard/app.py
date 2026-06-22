@@ -13,9 +13,10 @@ st.set_page_config(page_title="Finance Dashboard", layout="wide", page_icon=":ba
 overview     = st.Page("pages/overview.py",     title="Overview",     icon="💰️")
 expenses     = st.Page("pages/expenses.py",     title="Expenses",     icon="💸")
 income       = st.Page("pages/income.py",       title="Income",       icon="💷")
+currency     = st.Page("pages/currency.py",     title="Currency",     icon="🌍")
 transactions = st.Page("pages/transactions.py", title="Transactions", icon="🧾")
 
-pg = st.navigation([overview, expenses, income, transactions], position="top")
+pg = st.navigation([overview, expenses, income, currency, transactions], position="top")
 
 headers = st.context.headers
 user  = headers.get("X-Auth-Request-User")

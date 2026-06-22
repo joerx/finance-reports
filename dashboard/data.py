@@ -63,6 +63,26 @@ def load_balances(exclude_pattern: str = "") -> pd.DataFrame:
     """).df()
 
 
+@st.cache_data(show_spinner="Loading currency exposure ...")
+def load_currency_exposure() -> pd.DataFrame:
+    """Net exposure per currency across all asset and liability accounts."""
+    glob = f"s3://{BUCKET}/gnucash/**/*.parquet"
+    con = _make_connection()
+    return con.sql(f"""
+        SELECT
+            currency,
+            SUM(CASE WHEN account_type = 'assets'      THEN amount    ELSE 0 END) AS assets,
+            SUM(CASE WHEN account_type = 'liabilities' THEN amount    ELSE 0 END) AS liabilities,
+            SUM(amount)                                                            AS net_amount,
+            SUM(CASE WHEN account_type = 'assets'      THEN gbp_value ELSE 0 END) AS gbp_assets,
+            SUM(gbp_value)                                                         AS gbp_amount
+        FROM read_parquet('{glob}', hive_partitioning = true)
+        WHERE account_type IN ('assets', 'liabilities')
+        GROUP BY currency
+        ORDER BY gbp_amount DESC
+    """).df()
+
+
 @st.cache_data(show_spinner="Loading data ...")
 def load_data() -> pd.DataFrame:
     months = last_12_months()

@@ -85,6 +85,8 @@ Expense data is extracted from a GnuCash database and uploaded to S3 as Parquet.
 
 ### Data Sync
 
+This will export the ledger, write all transactions for the given period to Parquet files and sync them to any S3-compatible storage (Configured via `S3_BUCKET` etc. above)
+
 ```bash
 ./scripts/sync.sh <db-file> <quarter>
 
